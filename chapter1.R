@@ -6,8 +6,8 @@
 # first look: trend, seasonality (-> calendar time has effect), long-run cycle, 
 # sigma = const, outliers, abrupt breaks in mean or variance
 
+# example: annual earthquake series
 library(dplyr)
-
 earthquakes <- read.table(
   file='earthquakes.csv',
   header=TRUE,
@@ -15,47 +15,44 @@ earthquakes <- read.table(
   )
 earthquakes$Date <- as.Date(earthquakes$Date, format='%m/%d/%Y')
 earthquakes$Year <- format(earthquakes$Date, format='%Y')
-
 earthquakes %>%
   group_by(Year) %>%
   count() -> earthquakes_by_year
+par(mfcol = c(1, 3))
+plot(earthquakes_by_year$Year, earthquakes_by_year$n, type='o', pch=20)
+abline(h=mean(earthquakes_by_year$n))
 
-earthquakes_by_year
+# features of the series:
+#   - upward trend
+#   - no clear seasonality
+#   - maybe 1 outlier in 2011 (712 earthquakes)
+#   - more erratic towards right side, perhaps variance is higher there
 
+# the AR(1) model:
+# x_t = delta + phi1 * x_tminus1 + w_t
+# assumptions:
+#   - wt --> iid N(0, sigma_w^2)
+#   - wt independent of x
 
-plot(earthquakes_by_year$Year, earthquakes_by_year$n)
+# lag-1 plot
+n <- nrow(earthquakes_by_year)
+x_t <- earthquakes_by_year$n[2:n]
+x_tminus1 <- earthquakes_by_year$n[1:(n-1)]
+plot(x_tminus1, x_t)
+abline(lm(x_t~x_tminus1))
 
+# assuming we can just use OLS on x_t ~ x_tminus1 (for different reasons this is 
+# not correct, discussed below), we'd do this:
+ols <- lm(x_t ~ x_tminus1)
+summary(ols)
 
-trend <- 0
-n <- 100
-tt <- seq(from=0, to=100, length.out=100)
-y <- 10 + trend*tt + rnorm(n, mean=0, sd=0.01)
-
-ytrain <- y[1:50]
-ytest <- y[51:length(y)]
-
-
-# y(t) = phi(0) + phi(1)*y(t-1) + e(t)
-
-yt <- ytrain[2:length(ytrain)]
-ytm1 <- ytrain[1:(length(ytrain)-1)]
-AR1 <- lm(yt~ytm1)
-phi0 <- AR1$coefficients[1]
-phi1 <- AR1$coefficients[2]
-et <- AR1$residuals
-ytpred_train <- AR1$fitted.values
-
-ytm1pred <- ytest[1:(length(ytest)-1)]
-ytpred <- phi0 + phi1*ytm1pred
-
-par(mar=c(3, 3, 1, 1))
-plot(tt[1:50], ytrain, type='o', pch=20, 
-     xlim=c(tt[1], tt[length(tt)]), 
-     ylim=c(min(y), max(y)))
-lines(tt[2:length(ytrain)], ytpred_train, col='gray', lwd=2)
-abline(h=phi0)
-
-lines(tt[51:length(tt)], ytest, pch=20, col='red', type='o')
-lines(tt[52:length(tt)], ytpred, col='pink', lwd=2)
+# OLS results 
+# model: x_t = 141.5 + 0.672 * x_tminus1, F(1, 50) = 22.81, p<0.001
+# residual standard error = 91.4
+# slope is significant, so lag1 variable is useful
+# R^2 = 0.29
+# residual analysis:
+plot(ols$fitted.values, ols$residuals)
+abline(h=0)
 
 
