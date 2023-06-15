@@ -127,13 +127,9 @@ abline(a=0, b=1)
 # autocorrelation = cov(x_t, x_tminus1)/sd(x_t)*sd(x_tminus1)
 
 # ACF of residuals of the above 2 models
-acf_residuals_earthquakes <- acf(ols$residuals, plot=FALSE)
-acf_residuals_beer <- acf(ols_trend_seasonal$residuals, plot=FALSE)
 par(mfcol=c(1, 2))
-plot(acf_residuals_earthquakes[2:max(acf_residuals_earthquakes$lag)], 
-     ylim=c(-1, 1), main='ACF residuals earthquakes')
-plot(acf_residuals_beer[2:max(acf_residuals_beer$lag)], 
-     ylim=c(-1, 1), main='ACF residuals beer')
+acf(ols$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residuals earthquakes')
+acf(ols_trend_seasonal$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residuals beer')
 
 
 # ********************
@@ -190,13 +186,49 @@ plot(acf_residuals_beer[2:max(acf_residuals_beer$lag)],
 #
 #   - lag-1 autocorrelation = phi_h
 #
-# ACF patterns with phi_1 > 0 and phi_1 < 0
-delta <- 0
+# ACF patterns with phi_1 > 0 and phi_1 < 0:
+
+# set parameters
+delta <- 20
 phi_1_pos <- 0.6
 phi_1_neg <- -0.6
+n <- 50
 
-x_pos = delta + phi_1_pos*x_t_minus1 + rnorm(0, 2)
-x_neg = 
+# initialize series
+x_pos <- double(length = n)
+x_neg <- double(length = n)
+x_pos[1] <- runif(1, min=0, max=10)
+x_neg[1] <- runif(1, min=0, max=10)
+
+# compute series
+for(i in seq(2, n, by=1)){
+  x_pos[i] <- delta + phi_1_pos*x_pos[i-1] + rnorm(n=1, mean=0, sd=10)
+  x_neg[i] <- delta + phi_1_neg*x_neg[i-1] + rnorm(n=1, mean=0, sd=10)
+}
+
+# plot
+par(mfrow=c(2, 2), mar=c(3, 3, 3, 1))
+plot(x_pos, type='o', pch=20, main='phi_1 = 0.6')
+acf(x_pos, xlim=c(1, 20), ylim=c(-1, 1), main='ACF pos')
+plot(x_neg, type='o', pch=20, main='phi_1 = -0.6')
+acf(x_neg, xlim=c(1, 20), ylim=c(-1, 1), main='ACF neg')
+
+# for phi_1 > 0, ACF tapers towards 0 relatively quickly
+# for phi_1 > 0, same happens, but more slowly and with alternating sign for ACF
+
+# theoretically, for an AR(1) process, the phi for higher lags should be the 
+# successive powers of phi_1
+
+# for non-stationary data, use 1-order differencing to stabilize series
+# example: ACF for daily cardiovascular mortality rate in LA county, 1970, 1979
+x_t = scan('cmort.dat')
+y_t <- diff(x_t, 1) # compute 1st-order difference series
+
+par(mfcol=c(2, 2), mar=c(3, 2, 3, 1))
+plot(x_t, type='o', pch=20, main='raw data')
+plot(y_t, type='o', pch=20, main='differences')
+acf(x_t, xlim=c(1, 24), ylim=c(-1, 1), main='ACF, raw')
+acf(y_t, xlim=c(1, 24), ylim=c(-1, 1), main='ACF, differences')
 
 
 
