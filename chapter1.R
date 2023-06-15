@@ -9,9 +9,9 @@
 # example: annual earthquake series
 library(dplyr)
 earthquakes <- read.table(
-  file='earthquakes.csv',
-  header=TRUE,
-  sep=','
+  file = 'earthquakes.csv',
+  header = TRUE,
+  sep = ','
   )
 earthquakes$Date <- as.Date(earthquakes$Date, format='%m/%d/%Y')
 earthquakes$Year <- format(earthquakes$Date, format='%Y')
@@ -28,23 +28,23 @@ abline(h=mean(earthquakes_by_year$n))
 #   - maybe 1 outlier in 2011 (712 earthquakes)
 #   - more erratic towards right side, perhaps variance is higher there
 
-# the AR(1) model:
-# x_t = delta + phi1 * x_tminus1 + w_t
+# example: the AR(1) model:
+# x_t = delta + phi_1*x_tminus1 + w_t
 # assumptions:
-#   - wt --> iid N(0, sigma_w^2)
-#   - wt independent of x
+#   - w_t --> iid N(0, sigma_w^2)
+#   - w_t independent of x
 
 # lag-1 plot
 n <- nrow(earthquakes_by_year)
 x_t <- earthquakes_by_year$n[2:n]
 x_tminus1 <- earthquakes_by_year$n[1:(n-1)]
 plot(x_tminus1, x_t)
-abline(lm(x_t~x_tminus1))
 
 # assuming we can just use OLS on x_t ~ x_tminus1 (for different reasons this is 
 # not correct, discussed below), we'd do this:
 ols <- lm(x_t ~ x_tminus1)
 summary(ols)
+abline(ols)
 
 # OLS results 
 # model: x_t = 141.5 + 0.672 * x_tminus1, F(1, 50) = 22.81, p<0.001
@@ -54,5 +54,140 @@ summary(ols)
 # residual analysis:
 plot(ols$fitted.values, ols$residuals)
 abline(h=0)
+# there's a two major outliers at fitted values ~460 (low leverage) and ~700 
+
+# example with trend and seasonality: quarterly beer production in australia
+library(fpp)
+data(ausbeer)
+ausbeer <- data.frame(
+  t = as.numeric(time(ausbeer))[1:72],
+  tsquared = as.numeric(time(ausbeer))[1:72]^2,
+  quarter = cycle(ausbeer)[1:72],
+  x_t = as.numeric(ausbeer)[1:72]
+)
+
+# features of the series:
+#   - clear upward trend
+#   - clear seasonality, with values increasing from Q2 to Q4 and then going back 
+#     down
+#   - 1 outliers at end of series
+#   - variance seems slightly larger toward end of series
+
+# one could manually devise a model based on classical regression, and try
+# to reproduce with it the observed trend and seasonality:
+#   - for linear trend, use t as predictor, t + t^2 for quadratic trend
+#   - for quarterly seasonality, we can define indicator variables Sj, where
+#     j = 1, 2, 3, 4 (the quarters) and Sj = 1 if value is in quarter j, 0 otherwise
+#   - model: x_t = beta1*t + beta2*t^2 + alpha1*S1 + alpha2*S2 + alpha3*S3 + alpha4*S4 + w_t
+
+# create Sj
+for(j in 1:4){ 
+  varname <- paste0('S', j)
+  varval <- assign(varname, ifelse(ausbeer$quarter == j, 1, 0))
+}
+ausbeer <- cbind(ausbeer, S1, S2, S3, S4)
+i_train <- 1:50
+i_test <- 51:nrow(ausbeer)
+ausbeer_train <- ausbeer[i_train, ]
+ausbeer_test <- ausbeer[i_test, ]
+
+# fit model
+ols_trend_seasonal <- lm(
+  formula = x_t ~ 0 + t + tsquared + S1 + S2 + S3 + S4, 
+  data = ausbeer_train)
+summary(ols_trend_seasonal)
+
+# predict and test
+newdata <- ausbeer_test[, c(-3, -4)]
+x_t_pred <- predict(ols_trend_seasonal, newdata)
+
+par(mfcol = c(1, 3))
+plot(ausbeer$t, ausbeer$x_t, 
+     type='o', pch=20, xlab='t', ylab='x_t', 
+    main='Original data + prediction')
+lines(ausbeer_test$t, x_t_pred, col='red', pch=20)
+plot(ols_trend_seasonal$fitted.values, ols_trend_seasonal$residuals,
+     xlab='t', ylab='x_t', 
+     main='Training residuals')
+abline(h=0)
+plot(ausbeer_test$x_t, x_t_pred,
+     main='Obs. vs. Pred, test data')
+abline(a=0, b=1)
+
+
+# **********************************************
+# Sample autocorrelation function ACF
+# *********************************************
+
+# x_t vs. x_tminus1 vs. x_tminus2 vs. x_tminus3, ...
+# reveals possible structure of series
+# after model-fitting, ACF of residuals can be useful -> there should be no 
+# significant association at any lag
+
+# autocorrelation = cov(x_t, x_tminus1)/sd(x_t)*sd(x_tminus1)
+
+# ACF of residuals of the above 2 models
+acf_residuals_earthquakes <- acf(ols$residuals, plot=FALSE)
+acf_residuals_beer <- acf(ols_trend_seasonal$residuals, plot=FALSE)
+par(mfcol=c(1, 2))
+plot(acf_residuals_earthquakes[2:max(acf_residuals_earthquakes$lag)], 
+     ylim=c(-1, 1), main='ACF residuals earthquakes')
+plot(acf_residuals_beer[2:max(acf_residuals_beer$lag)], 
+     ylim=c(-1, 1), main='ACF residuals beer')
+
+
+# ********************
+# stationarity
+# *******************
+
+# related to how distribution of stochastic process {X_t}, and its mean, variance 
+# and covariance at a particular lag, vary over time
+
+# strict/strong stationarity: 
+#   - distribution of stochastic process {Xt} does not change in time
+#   - variance may be infinite!
+
+# weak stationarity: 
+#   - mean, variance and autocorrelation do not change in time; the actual shape 
+#     of the distribution may change
+#   - variance must be finite!
+
+# relation strong / weak stationarity:
+#   - if it weren't for the infinite variance, strong would imply weak, but weakly
+#     stationary series must have finite variance
+#   - obviously, weak does NOT imply strong, since distribution may change while
+#     mean, variance and autocorrelation stay the same
+
+
+
+# ********************
+# The AR(1) model
+# *******************
+
+# x_t = delta + phi_1*x_tminus1 + w_t
+
+# assumptions:
+#   - x_t weakly stationary
+#   - w_t --> iid N(0, sigma_w^2)
+#   - w_t independent of x
+
+# properties:
+#   - expected value E(x_t):
+#     E(x_t) = E(delta + phi_1*x_tminus1 + w_t) 
+#     E(x_t) = E(delta) + E(phi_1*x_tminus1) + E(w_t)
+#     E(x_t) = delta + phi_1*E(x_tminus1) + 0 
+#     Due to stationarity, E(x_t) = E(x_tminus1), which we can call miu. Then,
+#     miu = delta / (1 - phi_1)
+#
+#   - variance = 
+#
+#
+#
+#
+
+
+
+
+
 
 
