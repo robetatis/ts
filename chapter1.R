@@ -173,19 +173,30 @@ plot(acf_residuals_beer[2:max(acf_residuals_beer$lag)],
 
 # properties:
 #   - expected value E(x_t):
-#     E(x_t) = E(delta + phi_1*x_tminus1 + w_t) 
+#     E(x_t) = E(delta + phi_1*x_tminus1 + w_t)
 #     E(x_t) = E(delta) + E(phi_1*x_tminus1) + E(w_t)
 #     E(x_t) = delta + phi_1*E(x_tminus1) + 0 
 #     Due to stationarity, E(x_t) = E(x_tminus1), which we can call miu. Then,
 #     miu = delta / (1 - phi_1)
 #
-#   - variance = 
+#   - variance Var(x_t):
+#     Var(x_t) = Var(delta + phi_1*x_tminus1 + w_t)
+#     ...assuming x_t and w_t (errors) are independent, and noting that delta and
+#        phi_1 are constants:
+#     Var(x_t) = 0 + Var(phi_1*x_tminus1) + Var(w_t)
+#     Var(x_t) = phi_1^2*Var(x_tminus1) + sigma_w^2
+#     ...assuming series is stationary, Var(x_t) = Var(x_tminus1)
+#     Var(x_t) = sigma_w^2 / (1 - phi_1^2)
 #
+#   - lag-1 autocorrelation = phi_h
 #
-#
-#
+# ACF patterns with phi_1 > 0 and phi_1 < 0
+delta <- 0
+phi_1_pos <- 0.6
+phi_1_neg <- -0.6
 
-
+x_pos = delta + phi_1_pos*x_t_minus1 + rnorm(0, 2)
+x_neg = 
 
 
 
