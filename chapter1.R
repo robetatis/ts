@@ -136,7 +136,7 @@ acf(ols_trend_seasonal$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residu
 # stationarity
 # *******************
 
-# related to how distribution of stochastic process {X_t}, and its mean, variance 
+# related to how distribution of stochastic process {X_t}, and its mean, variance, 
 # and covariance at a particular lag, vary over time
 
 # strict/strong stationarity: 
@@ -214,7 +214,7 @@ plot(x_neg, type='o', pch=20, main='phi_1 = -0.6')
 acf(x_neg, xlim=c(1, 20), ylim=c(-1, 1), main='ACF neg')
 
 # for phi_1 > 0, ACF tapers towards 0 relatively quickly
-# for phi_1 > 0, same happens, but more slowly and with alternating sign for ACF
+# for phi_1 < 0, same happens, but more slowly and with alternating sign for ACF
 
 # theoretically, for an AR(1) process, the phi for higher lags should be the 
 # successive powers of phi_1
