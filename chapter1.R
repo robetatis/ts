@@ -155,6 +155,72 @@ acf(ols_trend_seasonal$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residu
 #     mean, variance and autocorrelation stay the same
 
 
+# KPSS stationarity test: kwiatkowski-phillips-schmidt-shin test
+# tests for stationarity with respect to level value and/or trend
+# H0: series is (level or trend) stationary
+# H1: series has unit root
+
+# grab data
+x_t <- read.table(
+  file = 'unemployment.csv',
+  header = TRUE,
+  sep = '\t'
+)
+x_t <- x_t[[2]]
+tt <- 1:length(x_t)
+
+# visualize
+plot(1:length(x_t), x_t, type='o', pch=20)
+abline(h=mean(x_t), col='blue')
+abline(lm(x_t ~ tt), col='red')
+
+# compute test statistic
+kpss <- function(x_t){
+  
+  # compute base quantities
+  n <- length(x_t)
+  mean_x = mean(x_t)
+  
+  tt <- 1:length(x_t)
+  model <- lm(x_t ~ tt)
+  
+  ei_mean <- x_t - mean_x
+  ei_trend <- model$residuals
+  
+  S_t_mean <- cumsum(ei_mean)
+  S_t_trend <- cumsum(ei_trend)
+  
+  lambda_mean <- sqrt(sum(ei_mean^2)/(n - 1))
+  lambda_trend <- sqrt(sum(ei_trend^2)/(n - 2))
+  
+  kpss_mean <- sum(S_t_mean^2)/(n^2 * lambda_mean^2)
+  kpss_trend <- sum(S_t_trend^2)/(n^2 * lambda_trend^2)
+  
+  return (c(kpss_mean=kpss_mean, kpss_trend=kpss_trend))
+}
+kpss(x_t)
+
+# with tseries library
+library(tseries)
+tseries::kpss.test(x_t, 'Level')
+tseries::kpss.test(x_t, 'Trend')
+
+# kpss test for white noise
+x_t <- rnorm(100)
+tseries::kpss.test(x_t, 'Level')
+plot(x_t, type='o', pch=20)
+
+# kpss test for random walk
+w_t <- runif(100, -1, 1)
+x_t <- numeric(length = 100)
+x_t[1] <- 0
+for(i in 2:length(w_t)){
+  x_t[i] <- x_t[i-1] + w_t[i]
+}
+tseries::kpss.test(x_t, 'Level')
+plot(x_t, type='o', pch=20)
+
+
 
 # ********************
 # The AR(1) model
@@ -172,8 +238,8 @@ acf(ols_trend_seasonal$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residu
 #     E(x_t) = E(delta + phi_1*x_tminus1 + w_t)
 #     E(x_t) = E(delta) + E(phi_1*x_tminus1) + E(w_t)
 #     E(x_t) = delta + phi_1*E(x_tminus1) + 0 
-#     Due to stationarity, E(x_t) = E(x_tminus1), which we can call miu. Then,
-#     miu = delta / (1 - phi_1)
+#     Due to stationarity, E(x_t) = E(x_tminus1). Then,
+#     E(x_t) = delta / (1 - phi_1)
 #
 #   - variance Var(x_t):
 #     Var(x_t) = Var(delta + phi_1*x_tminus1 + w_t)
@@ -184,8 +250,29 @@ acf(ols_trend_seasonal$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residu
 #     ...assuming series is stationary, Var(x_t) = Var(x_tminus1)
 #     Var(x_t) = sigma_w^2 / (1 - phi_1^2)
 #
-#   - lag-1 autocorrelation = phi_h
+#   - autocovariance Cov(x_t, x_tminush) (h = lag):
+#     ...writing x_t by substituting x_minus1 (use model without delta for simplicity)
+#        going from x_t back to x_tminush
+#     x_t = phi_1*x_tminus1 + w_t
+#     x_t = phi_1^2*x_tminus2 + phi_1*w_tminus1 + w_t
+#     x_t = phi_1^3*x_tminus3 + phi_1 2*w_tminus2 + phi_1*w_tminus1 + w_t
+#     ... at t_minush:
+#     x_t = phi_1^h*x_tminush + sum{i=0...h-1}(phi_1^i*w_tminusi)
+#     ... substituting this for x_t in definition of cov:
+#     Cov(x_t, x_tminush) = Cov(phi_1^h*x_tminush + sum{i=0...h-1}(phi_1^i*w_tminusi),
+#                               x_tminush)
+#     Cov(x_t, x_tminush) = Cov(phi_1^h*x_tminush, x_tminush) +
+#                           Cov(sum{i=0...h-1}(phi_1^i*w_tminusi), x_tminush)
+#     ... noting that the second Cov is zero, since the w_t are iid and independent
+#         of the x_t, we get:
+#     Cov(x_t, x_tminush) = phi_1^h*Cov(x_tminush, x_tminush) + 0
+#     Cov(x_t, x_tminush) = phi_1^h*Var(x_tminush)
+#     ... for AR(1), h = 1:
+#     Cov(x_t, x_tminus1) = (phi_1*sigma_w^2)/(1 - phi_1^2)
 #
+#   - lag-1 autocorrelation = phi_1*Var(x_t)/Var(x_t) = phi_1
+
+
 # ACF patterns with phi_1 > 0 and phi_1 < 0:
 
 # set parameters

@@ -87,10 +87,9 @@ plot(acfMA1_empirical, xlim=c(1, 20), type='h', main='sample ACF', ylim=c(-1, 1)
 #     ...for h = 1:
 #     = E(w_t*w_tminus1 + theta_1*w_t*w_tminus2 + theta_1*w_tminus1^2 + theta_1^2*w_tminus1*w_tminus2)
 #     = E(w_t*w_tminus1) + theta_1*E(w_t*w_tminus2) + theta_1*E(w_tminus1^2) + theta_1^2*E(w_tminus1*w_tminus2)
-#     ...assuming independence of errors -> E(w_t*w_tminus1) = E(w_t)E(w_tminus1) + Cov(w_t, w_tminus1) = 0 + 0
-
+#     ...assuming independence of errors -> E(w_t*w_tminus1) = E(w_t)E(w_tminus1) + Cov(w_t, w_tminus1) = 0 + 0:
 #     = theta_1*E(w_tminus1^2) 
-#     ...since Var(w_t) = E(w_t^2) - (E(w_t))^2 = E(w_t^2)
+#     ...since Var(w_t) = E(w_t^2) - (E(w_t))^2 = E(w_t^2):
 #     = theta_1*sigma_w^2
 # 
 #   - autocorrelation lag 1:
@@ -120,7 +119,7 @@ plot(acfMA1_empirical, xlim=c(1, 20), type='h', main='sample ACF', ylim=c(-1, 1)
 #     terms     
 
 # *****************************************************************************
-# |theta| < 1 is a requirement for invertibility, since for theta > 1 the AR
+# |phi| < 1 is a requirement for invertibility, since for phi > 1 the AR
 # term doesn't vanish as we go back infinintely over time
 
 theta <- seq(-5, 5, by=0.05)
@@ -191,7 +190,6 @@ abline(h=rho_2_theoretical, col='gray')
 #   1 to q, and then drops abruptly to zero. so, whenever the ACF has 
 #   this pattern, it's likely a MA(q) process.
 # - if this pattern is observed for the PACF, it's likely an AR(p) process
-# - 
 
 # -----|---------------------|--------------------|
 #      | AR                  | MA                 |
@@ -212,7 +210,54 @@ acf(ma_process, main='ACF MA(1)', ylim=c(-1, 1), xlim=c(1, 20))
 pacf(ma_process, main='PACF MA(1)', ylim=c(-1, 1), xlim=c(1, 20))
 
 
+# notational conventions
+# ******************************
 
+# backshift operator: 
+#   - B^k*x_t = x_tminus_k, 
+#   - B^k*w_t = w_tminus_k
+#   - B^k*theta = theta (constants don't move in time)
+
+# AR polynomial operator:
+#   - PHI(B) = 1 - phi_1*B - phi_1*B^2 - ... - phi_q*B^q (q = max. lag) 
+#   - AR(1) model can be written as 
+#     PHI(B)*x_t = delta + w_t, expanding left-hand side:
+#     (1 - phi_1*B)*x_t = delta + w_t, applying operator:
+#     x_t - phi_1*x_tminus1 = delta + w_t, rearranging:
+#     x_t = delta + phi_1*x_tminus1 + w_t
+#   - AR(2) model: 
+#     PHI(B)*x_t = delta + w_t 
+#     (1- phi_1*B - phi_2*B^2)*x_t = delta + w_t
+#     x_t - phi_1*x_tminus1 - phi_2*x_tminus2 = delta + w_t
+#     x_t = delta + phi_1*x_tminus1 + phi_2*x_tminus2 + w_t
+
+
+# MA polynomial operator:
+#   - same as AR operator, but applied on w_t and with changed sign
+#   - MA(1) model can be written as:
+#     x_t = miu + w_t + theta_1*w_tminus1
+#     x_t = miu + (1 + theta_1*B)*w_t
+#     THETA(B)w*t = x_t - miu, q=1
+#   - MA(2):
+#     x_t = miu + w_t + theta_1*w_tminus1 + theta_2*w_tminus2
+#     x_t = miu + (1 + theta_1*B + theta_2*B^2)*w_t
+#     THETA(B)*w_t = x_t - miu, 1=2
+
+# ARMA model:
+#   - x_t = miu + phi_1*x_tminus1 + ... + phi_p*x_tminusp + 
+#               + theta_1*w_tminus1 + ... + theta_q*w_tminusq
+#               + w_t
+#     x_t - miu - phi_1*x_tminus1 - ... - phi_p*x_tminusp = 
+#               theta_1*w_tminus1 + ... + theta_q*w_tminusqs
+#               + w_t
+#     (1 - phi_1*B - ... - phi_p*B^p)*(x_t - miu) =
+#               (1 + theta_1*B + ... + theta_q*B^q)*w_t
+#
+#     PHI(B)*(x_t - miu) = THETA(B)*w_t
+
+# differencing:
+#   - x_t - x_tminusk = (1 - B^k)*x_t = ▽_k*x_t
+#   - ▽^2*x_t = (1 - B)^2*x_t = (1 - 2B + B^2)*x_t = x_t - 2*x_tminus1 + x_tminus2
 
 
 
