@@ -1,4 +1,4 @@
-## **Some fundamental ideas of time series modelling**
+# **Some fundamental ideas of time series modelling**
 
 **Author**: Dr.-Ing. Roberto Tatis-Muvdi
 
@@ -7,9 +7,9 @@
   1. https://online.stat.psu.edu/stat510/
   2. Shumway, R., Stoffer, D. (2011). Time series analysis and its applications, with R examples, 3rd edition. Springer New York Dordrecht Heidelberg London. e-ISBN 978-1-4419-7865-3
 
-These notes aim to explain some basic principles of time series modelling in a practical way, but without avoiding critical theoretical details. 
+These notes aim to explain some basic principles of time series modelling in a practical way, but without avoiding critical theoretical details. It's a summary of (hopefully) **understandable explanations** of key ideas, and not just a plain presentation of concepts, which is often what I've found (and struggled with) in many textbooks.
 
-### **1. What are time series, and why are they different from other data sets?**
+## **1. What are time series, and why are they different from other data sets?**
 
 A time series is just a sequence of measurements of a variable (GDP, wind speed, population size, no. users, no. transactions, etc.) over time, where every data point has a time associated with it (typically called a 'time stamp'). Here's a manual example:
 
@@ -21,9 +21,7 @@ daily_transactions <- data.frame(
 plot(daily_transactions, type='b', main='No. daily transactions', ylim=c(0, 20))
 ```
 
-When variables are measured over time, data points that are close to each other are unlikely to be independent, and this non-independence means we cannot use classical statistical approaches on that data, like OLS, ANOVA, etc. 
-
-To see why, here's an example. Say we wanted to estimate the correlation between duration of weekly exercise and blood pressure, and you measured these variables every week for the same person over 1 year, and got this data:
+When variables are measured over time, data points that are close to each other are unlikely to be independent, and this non-independence means we cannot use classical statistical approaches on that data, like OLS, ANOVA, etc. To see why, here's an example. Say we wanted to estimate the correlation between duration of weekly exercise and blood pressure, and you measured these variables every week for the same person over 1 year, and got this data:
 
 ```{r, echo=FALSE}
 load('../data/df')
@@ -42,26 +40,101 @@ Although the data suggest an inverse relationship between exercise and blood pre
 
 Put another way, it's as if each data point influences the next few data points, and this happens throughout the entire time series. So, if you do an OLS and obtain significant results, you'd be *falsely attributing* the observed variations in blood pressure to exercise, and all your estimated statistics would be telling you things that aren't true.   
 
-These 'inertia' mechanisms exists everywhere in nature (to different degrees!), and data can be influenced by them whenever we measure variables over time. The manifestation of these mechanisms is what in time series modelling is called *autocorrelation*, where *auto* highlights the fact that we're talking about the correlation of a variable with past values of itself. More on autocorrelation below.
+These 'inertia' mechanisms exists everywhere in nature (to different degrees!), and data can be influenced by them whenever we measure variables over time. The manifestation of these mechanisms is what in time series modelling is called *autocorrelation*, where *auto* highlights the fact that we're talking about the correlation of a variable with past values of itself. More on autocorrelation later.
 
-### **2. Mathematical models of time series**
+## **2. Autoregressive models of time series**
 
+The logic behind autoregressive models is that, in some cases, it may be possible to use past values of the response variable to predict current or future values instead of using explanatory variables, as it's usually done 
 
+(**Side note**: It's also possible to use a combination of autocorrelation and correlation with other variables - an approach called *cross-correlation*, see [here](https://online.stat.psu.edu/stat510/lesson/8/8.2))
+
+The idea here is that the response variable itself already stores all the effects of its driving factors, and that we can use that regularity to predict what's going to happen next. Obviously, this will only succeed if those regularities really do exist and are strong enough, or in other words, if there really is enough **structure** in the data.
+
+In similar vein, Shumway & Stoffer (2011) use the word *smoothness* to refer to the fact that time series with autocorrelation have values that don't just move up and down haphazardly, but rather seem 'tied' to past observations, either positively or negatively. Thus, the goal of any mathematical model of a time series is to mimic that smoothness.
+
+### **Some notation**
+
+We'll represent a time series as a sequence of values $x_{1}$, $x_{2}$, ..., $x_{n}$. Also, $x_{t}$ represents any particular value along that sequence, at an unspecified time $t$. Past or future values of the series are denoted as $x_{t-1}$, $x_{t-2}$, $x_{t-h}$, $x_{t+1}$, etc., where $t-1$, $t-2$, $t-h$ etc. indicate the **lag $h$**, i.e., the number of time units we're looking into the past or the future.
+
+### **A first autoregressive time series model: AR(1)**
+
+So, how do we use the above logic to write a mathematical model of a time series? Well, since we're saying that the present is a function of the past, we could write something like: 
+
+$$x_{t}=\delta+\phi_{1}~x_{t-1}+w_{t}$$
+where $x_{t}$ is the current value, $x_{t-1}$ is the previous value, $\delta$ = some constant, $\phi$ = autocorrelation coefficient for lag 1, and $w_{t}$ is *random noise*. This is called an autoregressive model of order 1, or AR(1) model. More details on it later.
+
+This last term ($w_{t}$) is key, because it indicates the *stochastic nature* of the model (or, for that purpose, of any statistical model). An analogy with simple linear regression can help illustrate this critical point.
+
+### **What makes stochastic models stochastic**
+
+In OLS regression, we model the response $y$ as $y=\beta_{0}+\beta_{1}~x+\epsilon$, and, for a single observation $y_{i}$, we say that $y_{i}=\beta_{0}+\beta_{1}~x_{i}+\epsilon_{i}$. What we're saying with this is that any realization (i.e., any particular value) $y_{i}$ of the random variable $y$ can be understood (i.e., computed, modeled) as a linear function of it's corresponding $x_{i}$ (the first two terms $\beta_{0}+\beta_{1}~x_{i}$) plus a *random error* 
+$\epsilon_{i}$. Why this random error? Because nature is 'noisy', and even if $x$ and $y$ really are correlated, there will always be some spread around the line given by $\beta_{0}+\beta_{1}~x_{i}$. 
+
+It's important to understand that this 'noise' exists at the *population* level, and it's not due to the fact that we have a *sample*. In other words, if we could somehow observe the entire *population* of values of $x$ and $y$, we'd still see the spread instead of seeing all values of $x$ and $y$ fall perfectly along a straight line. It's as if there's a little 'casino wheel' behind every data point, which makes it vary randomly when you observe it. If you had a time machine, went back and measured again multiple times, you'd get slightly different results every time. (Formally that little casino wheel is called a stochastic process).
+
+Given that this is how nature behaves, it makes sense to include a term in the equation that 'mimics' this noisy behavior, and that's $\epsilon$, or, in the time series model above, $w_{t}$. Obviously, since these terms are random, we need a distribution for them, and in many cases it's useful to assume a normal distribution with a mean of 0 and a variance of some value $\sigma$ (which we estimate from the data). Further, we also assume that, across all values of $x$, that distribution is the same. If we didn't assume that we'd have to use the data to estimate the distribution parameters at every level of $x$, and that's just too many parameters for any data set.
+
+Having this random term when we compute $x_{t}$ (or $y$ in OLS regression) means that our computed values will have intervals around them, and the width of those intervals will depend on the value of $\sigma$. Maybe a better way to look at this is that $x_{t}$ doesn't really have 'fixed' values, but it's rather a distribution that 'shows' its values when we observe it, and our job is to characterize that distribution using the data. So, long story short, $x_{t}$ is a *random* variable, a time series {$x_{t}$} is a sequence of random variables, and the observed data we have is a sequence of the realizations of each of those random variables (a random draw from each $x_{t}$'s distribution).
+
+#### **Some famous theoretical stochastic processes**
+
+Let's use some examples of stochastic processes and their models to cover a few fundamental concepts in autoregressive time series modeling.
+
+ 
 
 ```{r}
+
+
 load('../data/df')
 par(mfcol=c(1, 2))
 acf(df$blood_pressure, xlim=c(1, 20), ylim=c(-1, 1), main=)
 pacf(df$blood_pressure, xlim=c(1, 20), ylim=c(-1, 1))
+
+# stochastic processes with no structure
+
+# random noise
+w_t <- runif(100, -1, 1)
+x_t_random_noise = w_t
+
+# random walk
+x_t_random_walk <- numeric(length = 100)
+x_t_random_walk[1] <- 0
+for(i in 2:length(w_t)){
+  x_t_random_walk[i] <- x_t_random_walk[i-1] + w_t[i]
+  
+}
+
+# random walk with drift
+delta <- 1.2
+x_t_random_walk_drift <- numeric(length = 100)
+x_t_random_walk_drift[1] <- 0
+for(i in 2:length(w_t)){
+  x_t_random_walk_drift[i] <- delta + x_t_random_walk_drift[i-1] + w_t[i]
+  
+}
+
+windows(15, 10)
+par(mfrow=c(3, 5), mar=c(4, 3, 3, 1))
+
+plot(x_t_random_noise, type='o', pch=20, main='random noise')
+acf(x_t_random_noise, xlim=c(1, 20), ylim=c(-1, 1), main='random noise ACF')
+pacf(x_t_random_noise, xlim=c(1, 20), ylim=c(-1, 1), main='random noise PACF')
+acf(diff(x_t_random_noise), xlim=c(1, 20), ylim=c(-1, 1), main='diff random noise ACF')
+pacf(diff(x_t_random_noise), xlim=c(1, 20), ylim=c(-1, 1), main='diff random noise PACF')
+
+plot(x_t_random_walk, type='o', pch=20, main='random walk')
+acf(x_t_random_walk, xlim=c(1, 20), ylim=c(-1, 1), main='random walk ACF')
+pacf(x_t_random_walk, xlim=c(1, 20), ylim=c(-1, 1), main='random walk PACF')
+acf(diff(x_t_random_walk), xlim=c(1, 20), ylim=c(-1, 1), main='random walk diff ACF')
+pacf(diff(x_t_random_walk), xlim=c(1, 20), ylim=c(-1, 1), main='random walk diff PACF')
+
+plot(x_t_random_walk_drift, type='o', pch=20, main='random walk drift')
+acf(x_t_random_walk_drift, xlim=c(1, 20), ylim=c(-1, 1), main='random walk drift ACF')
+pacf(x_t_random_walk_drift, xlim=c(1, 20), ylim=c(-1, 1), main='random walk drift PACF')
+acf(diff(x_t_random_walk_drift), xlim=c(1, 20), ylim=c(-1, 1), main='random walk drift diff ACF')
+pacf(diff(x_t_random_walk_drift), xlim=c(1, 20), ylim=c(-1, 1), main='random walk drift diff PACF')
+
+
+
+
 ```
-
-
-> 
-
-
-basic notion of 'smoothnes' -> any mathematical model of a time series must be able to 'mimic' smoothness, i.e., the property that adjacent values don't just 'jump' randomly, but rather seem 'tied' somehow to previous values
-
-
-
-
-Nature is noisy, so if we repeated the experiment with the same person under exactly the same conditoins (we'd probably need a time machine for that), we would **NOT** get exactly the same measurements. This means that every measurement we took is actually a realization of a random variable. It's like a casino wheel is turning
