@@ -9,7 +9,7 @@
 # example: annual earthquake series
 library(dplyr)
 earthquakes <- read.table(
-  file = 'earthquakes.csv',
+  file = 'data/earthquakes.csv',
   header = TRUE,
   sep = ','
 )
@@ -163,7 +163,7 @@ acf(ols_trend_seasonal$residuals, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residu
 
 # grab data
 x_t <- read.table(
-  file = 'unemployment.csv',
+  file = 'data/unemployment.csv',
   header = TRUE,
   sep = '\t'
 )
@@ -309,7 +309,7 @@ acf(x_neg, xlim=c(1, 20), ylim=c(-1, 1), main='ACF neg')
 
 # for non-stationary data, use 1-order differencing to stabilize series
 # example: ACF for daily cardiovascular mortality rate in LA county, 1970, 1979
-x_t = scan('cmort.dat')
+x_t = scan('data/cmort.dat')
 y_t <- diff(x_t, 1) # compute 1st-order difference series
 
 par(mfcol=c(2, 2), mar=c(3, 2, 3, 1))

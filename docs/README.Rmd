@@ -1,5 +1,3 @@
-output: rmarkdown::github_document
-
 ## **Some fundamental ideas of time series modelling**
 
 **Author**: Dr.-Ing. Roberto Tatis-Muvdi
@@ -9,9 +7,7 @@ output: rmarkdown::github_document
   1. https://online.stat.psu.edu/stat510/
   2. Shumway, R., Stoffer, D. (2011). Time series analysis and its applications, with R examples, 3rd edition. Springer New York Dordrecht Heidelberg London. e-ISBN 978-1-4419-7865-3
 
-### **Intro**
-
-These study notes aim to explain the basic principles of time series modelling in a practical way, but without avoiding critical theoretical details. The structure of the notes follows exactly the topics covered in source no. 1, adding theoretical details that I consider relevant at specific places based on source no. 2.
+These notes aim to explain some basic principles of time series modelling in a practical way, but without avoiding critical theoretical details. 
 
 ### **1. What are time series, and why are they different from other data sets?**
 
@@ -30,7 +26,7 @@ When variables are measured over time, data points that are close to each other 
 To see why, here's an example. Say we wanted to estimate the correlation between duration of weekly exercise and blood pressure, and you measured these variables every week for the same person over 1 year, and got this data:
 
 ```{r, echo=FALSE}
-load('df')
+load('../data/df')
 par(mfcol=c(2, 1), mar=c(4, 5, 1, 1))
 plot(
   df$week, df$duration_exercise, 
@@ -53,7 +49,7 @@ These 'inertia' mechanisms exists everywhere in nature (to different degrees!), 
 
 
 ```{r}
-load('df')
+load('../data/df')
 par(mfcol=c(1, 2))
 acf(df$blood_pressure, xlim=c(1, 20), ylim=c(-1, 1), main=)
 pacf(df$blood_pressure, xlim=c(1, 20), ylim=c(-1, 1))

@@ -127,7 +127,7 @@ library(forecast)
 library(tseries)
 
 # grab example series
-x_t <- ts(scan('eriedata.dat'))
+x_t <- ts(scan('data/eriedata.dat'))
 
 # check raw data, ACF and PACF
 par(mfcol=c(1, 3))
