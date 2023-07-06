@@ -1,3 +1,5 @@
+output: rmarkdown::github_document
+
 ## **Some fundamental ideas of time series modelling**
 
 **Author**: Dr.-Ing. Roberto Tatis-Muvdi
