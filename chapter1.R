@@ -12,12 +12,13 @@ earthquakes <- read.table(
   file = 'earthquakes.csv',
   header = TRUE,
   sep = ','
-  )
+)
 earthquakes$Date <- as.Date(earthquakes$Date, format='%m/%d/%Y')
 earthquakes$Year <- format(earthquakes$Date, format='%Y')
 earthquakes %>%
   group_by(Year) %>%
-  count() -> earthquakes_by_year
+  count() %>%
+  na.omit() -> earthquakes_by_year
 par(mfcol = c(1, 3))
 plot(earthquakes_by_year$Year, earthquakes_by_year$n, type='o', pch=20)
 abline(h=mean(earthquakes_by_year$n))

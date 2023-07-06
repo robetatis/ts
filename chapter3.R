@@ -121,16 +121,13 @@ dev.off()
 
 
 # ********************************
-# model evaluation
+# model identification
 # ********************************
 library(forecast)
 library(tseries)
 
 # grab example series
-x_t <- scan('eriedata.dat')
-
-# convert to ts
-x_t <- ts(x_t)
+x_t <- ts(scan('eriedata.dat'))
 
 # check raw data, ACF and PACF
 par(mfcol=c(1, 3))
@@ -141,20 +138,72 @@ pacf(x_t, xlim=c(1, 20), ylim=c(-1, 1), main='PACF')
 
 # stationarity test
 tseries::kpss.test(x_t)
+tseries::adf.test(x_t)
 
-model <- Arima(x_t, order=c(1, 0, 0))
+# fit model, check fit results
+model_100 <- forecast::Arima(x_t, order=c(1, 0, 0))
 
-model[[3]]
+# have package 'forecast' find best model automatically
+model_auto <- auto.arima(X_train, seasonal=FALSE)
+
+summary(model_100)
+summary(model_auto)
+# both models have same overall quality
+# since 'forecast' implements AR(1) models as x_t - miu = phi_1*(x_tminus1 - miu) + w_t,
+# the resulting model is: x_t - 14.23 = 0.617*(x_tminus1 - 14.23) + w_t 
+# -> x_t = 5.45 + 0.617*x_tminus1 + w_t, with w_t -> iid(0, 1.722)
+
+# significance of arima coeffs:
+n <- length(X_train)
+p <- 1
+q <- 0
+phi_1 <- as.numeric(model_100$coef[1])
+tcrit <- qt(0.025, df=n-p-q-1)
+tobs <- phi_1/0.1381
+print(c(tcrit=tcrit, tobs=tobs))
 
 # obs. vs pred, residuals acf and residuals vs. fitted
-ei <- as.numeric(model$residuals)
-yhat <- as.numeric(model$fitted)
-yobs <- as.numeric(x_t)
+ei <- as.numeric(model_100$residuals)
+yhat <- as.numeric(model_100$fitted)
 
 par(mfcol=c(1, 3))
-plot(yhat, yobs); abline(a=0, b=1)
-acf(ei, xlim=c(1, 20), ylim=c(-1, 1), main='residuals')
-plot(ei, yhat, pch=20)
+plot(x_t, main='x_t and fitted values')
+points(yhat, col='red', pch=20)
+acf(ei, xlim=c(1, 20), ylim=c(-1, 1), main='ACF residuals')
+plot(yhat, ei, pch=20, main='Residuals vs. fitted')
+
+
+# ********************************
+# model diagnostics
+# ********************************
+
+# Ljung-Box test -> when we look at PACF or ACF, implicitly, we're doing multiple
+# hypothesis testing. The Ljung-Box test is the way to avoid this. It's based on
+# this statistic:
+# Q(m) = n(n + 2) * sum_{j=1...m}(r_j^2/(n - j))
+# -> it measures the 'cumulative' autocorrelation up to lag m
+# this statistic can be used to check if the residuals' autocorrelations up to 
+# lag m are collectively == 0
+# A significant Q(m) suggests non-white-noise residuals (-> problem!)
+
+# when used for checking significance of residuals' ACF, Q(m) has chi-squared
+# distribution with df = m - (p + q + 1) -> i.e., Q(m) only defined for 
+# m > (p + q + 1)
+stats::Box.test(model_100$residuals, lag=20)
+
+# when used for raw data, i.e., for checking 'collective significance' of 
+# autocorrelation in data up to lag m, Q(m) has chi-squared distr. with df = m
+stats::Box.test(x_t, lag=20)
+
+
+# ********************************
+# forecasting with ARIMA models
+# ********************************
+
+
+
+
+
 
 
 

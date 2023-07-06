@@ -1,0 +1,69 @@
+## **Some fundamental ideas of time series modelling**
+
+**Author**: Dr.-Ing. Roberto Tatis-Muvdi
+
+**Sources**: 
+
+  1. https://online.stat.psu.edu/stat510/
+  2. Shumway, R., Stoffer, D. (2011). Time series analysis and its applications, with R examples, 3rd edition. Springer New York Dordrecht Heidelberg London. e-ISBN 978-1-4419-7865-3
+
+### **Intro**
+
+These study notes aim to explain the basic principles of time series modelling in a practical way, but without avoiding critical theoretical details. The structure of the notes follows exactly the topics covered in source no. 1, adding theoretical details that I consider relevant at specific places based on source no. 2.
+
+### **1. What are time series, and why are they different from other data sets?**
+
+A time series is just a sequence of measurements of a variable (GDP, wind speed, population size, no. users, no. transactions, etc.) over time, where every data point has a time associated with it (typically called a 'time stamp'). Here's a manual example:
+
+```{r, echo=FALSE}
+daily_transactions <- data.frame(
+  date = seq(as.Date('2023-06-05'), as.Date('2023-06-12'), by='day'),
+  n = c(7, 5, 7, 11, 13, 18, 5, 6)
+)
+plot(daily_transactions, type='b', main='No. daily transactions', ylim=c(0, 20))
+```
+
+When variables are measured over time, data points that are close to each other are unlikely to be independent, and this non-independence means we cannot use classical statistical approaches on that data, like OLS, ANOVA, etc. 
+
+To see why, here's an example. Say we wanted to estimate the correlation between duration of weekly exercise and blood pressure, and you measured these variables every week for the same person over 1 year, and got this data:
+
+```{r, echo=FALSE}
+load('df')
+par(mfcol=c(2, 1), mar=c(4, 5, 1, 1))
+plot(
+  df$week, df$duration_exercise, 
+  type='o', pch=20, 
+  ylab='Exercise\nduration [min.]', xlab='')
+plot(
+  df$week, df$blood_pressure, 
+  type='o', pch=20, col='red', 
+  ylab='Avg. systolic blood\npressure [mmHg]', xlab='Week')
+```
+
+Although the data suggest an inverse relationship between exercise and blood pressure, we also see that, for both variables, high values tend to be surrounded by high values, and the same for low values. Further, this 'inertia' may result from underlying *mechanisms* that keep high blood pressure high and low blood pressure low for some time *regardless of exercise*. 
+
+Put another way, it's as if each data point influences the next few data points, and this happens throughout the entire time series. So, if you do an OLS and obtain significant results, you'd be *falsely attributing* the observed variations in blood pressure to exercise, and all your estimated statistics would be telling you things that aren't true.   
+
+These 'inertia' mechanisms exists everywhere in nature (to different degrees!), and data can be influenced by them whenever we measure variables over time. The manifestation of these mechanisms is what in time series modelling is called *autocorrelation*, where *auto* highlights the fact that we're talking about the correlation of a variable with past values of itself. More on autocorrelation below.
+
+### **2. Mathematical models of time series**
+
+
+
+```{r}
+load('df')
+par(mfcol=c(1, 2))
+acf(df$blood_pressure, xlim=c(1, 20), ylim=c(-1, 1), main=)
+pacf(df$blood_pressure, xlim=c(1, 20), ylim=c(-1, 1))
+```
+
+
+> 
+
+
+basic notion of 'smoothnes' -> any mathematical model of a time series must be able to 'mimic' smoothness, i.e., the property that adjacent values don't just 'jump' randomly, but rather seem 'tied' somehow to previous values
+
+
+
+
+Nature is noisy, so if we repeated the experiment with the same person under exactly the same conditoins (we'd probably need a time machine for that), we would **NOT** get exactly the same measurements. This means that every measurement we took is actually a realization of a random variable. It's like a casino wheel is turning
