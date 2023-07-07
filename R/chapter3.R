@@ -200,6 +200,15 @@ stats::Box.test(x_t, lag=20)
 # forecasting with ARIMA models
 # ********************************
 
+# when forecasting with ARIMA models, we need past values of x_t and/or past error 
+# values w_tminush
+
+# if forecasting past the end of the series, we may even need values we haven't
+# yet observed!
+
+
+
+
 
 
 

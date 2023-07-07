@@ -44,7 +44,7 @@ These 'inertia' mechanisms exists everywhere in nature (to different degrees!), 
 
 ## **2. Autoregressive models of time series**
 
-The logic behind autoregressive models is that, in some cases, it may be possible to use past values of the response variable to predict current or future values instead of using explanatory variables, as it's usually done 
+The logic behind autoregressive models is that, in some cases, it may be possible to use past values of the response variable to predict its current or future values instead of using explanatory variables, as it's usually done 
 
 (**Side note**: It's also possible to use a combination of autocorrelation and correlation with other variables - an approach called *cross-correlation*, see [here](https://online.stat.psu.edu/stat510/lesson/8/8.2))
 
@@ -52,29 +52,88 @@ The idea here is that the response variable itself already stores all the effect
 
 In similar vein, Shumway & Stoffer (2011) use the word *smoothness* to refer to the fact that time series with autocorrelation have values that don't just move up and down haphazardly, but rather seem 'tied' to past observations, either positively or negatively. Thus, the goal of any mathematical model of a time series is to mimic that smoothness.
 
-### **Some notation**
+### **2.1. Some notation**
 
 We'll represent a time series as a sequence of values $x_{1}$, $x_{2}$, ..., $x_{n}$. Also, $x_{t}$ represents any particular value along that sequence, at an unspecified time $t$. Past or future values of the series are denoted as $x_{t-1}$, $x_{t-2}$, $x_{t-h}$, $x_{t+1}$, etc., where $t-1$, $t-2$, $t-h$ etc. indicate the **lag $h$**, i.e., the number of time units we're looking into the past or the future.
 
-### **A first autoregressive time series model: AR(1)**
+### **2.2. A first autoregressive time series model: AR(1)**
 
 So, how do we use the above logic to write a mathematical model of a time series? Well, since we're saying that the present is a function of the past, we could write something like: 
 
 $$x_{t}=\delta+\phi_{1}~x_{t-1}+w_{t}$$
 where $x_{t}$ is the current value, $x_{t-1}$ is the previous value, $\delta$ = some constant, $\phi$ = autocorrelation coefficient for lag 1, and $w_{t}$ is *random noise*. This is called an autoregressive model of order 1, or AR(1) model. More details on it later.
 
-This last term ($w_{t}$) is key, because it indicates the *stochastic nature* of the model (or, for that purpose, of any statistical model). An analogy with simple linear regression can help illustrate this critical point.
+The last term ($w_{t}$) is key because it indicates the *stochastic nature* of the model. An analogy with simple linear regression can help illustrate this critical point.
 
-### **What makes stochastic models stochastic**
+### **2.3. What makes stochastic models stochastic?**
 
 In OLS regression, we model the response $y$ as $y=\beta_{0}+\beta_{1}~x+\epsilon$, and, for a single observation $y_{i}$, we say that $y_{i}=\beta_{0}+\beta_{1}~x_{i}+\epsilon_{i}$. What we're saying with this is that any realization (i.e., any particular value) $y_{i}$ of the random variable $y$ can be understood (i.e., computed, modeled) as a linear function of it's corresponding $x_{i}$ (the first two terms $\beta_{0}+\beta_{1}~x_{i}$) plus a *random error* 
-$\epsilon_{i}$. Why this random error? Because nature is 'noisy', and even if $x$ and $y$ really are correlated, there will always be some spread around the line given by $\beta_{0}+\beta_{1}~x_{i}$. 
+$\epsilon_{i}$. 
 
-It's important to understand that this 'noise' exists at the *population* level, and it's not due to the fact that we have a *sample*. In other words, if we could somehow observe the entire *population* of values of $x$ and $y$, we'd still see the spread instead of seeing all values of $x$ and $y$ fall perfectly along a straight line. It's as if there's a little 'casino wheel' behind every data point, which makes it vary randomly when you observe it. If you had a time machine, went back and measured again multiple times, you'd get slightly different results every time. (Formally that little casino wheel is called a stochastic process).
+Why this random error? Because nature is 'noisy', and even if $x$ and $y$ really are correlated, there will always be some spread around the line given by $\beta_{0}+\beta_{1}~x$. In other words, at any give value of $x$, $x_{i}$, we don't have a 'corresponding' value of $y$, $y_{i}$, but rather a *distribution* for $y$. The OLS line $\beta_{0}+\beta_{1}~x$ only represents the expected value of $y$ given $x$. Formally, this is written as $E(y|x)=\beta_{0}+\beta_{1}~x$, which is obtained by simply taking the expected value given $x$ ($E(...|x)$) on both sides of $y=\beta_{0}+\beta_{1}~x+\epsilon$, and noting that $E(\epsilon|x)=0$ (since OLS assumes random error to have a normal distribution with zero mean and variance $\sigma^2$).
 
-Given that this is how nature behaves, it makes sense to include a term in the equation that 'mimics' this noisy behavior, and that's $\epsilon$, or, in the time series model above, $w_{t}$. Obviously, since these terms are random, we need a distribution for them, and in many cases it's useful to assume a normal distribution with a mean of 0 and a variance of some value $\sigma$ (which we estimate from the data). Further, we also assume that, across all values of $x$, that distribution is the same. If we didn't assume that we'd have to use the data to estimate the distribution parameters at every level of $x$, and that's just too many parameters for any data set.
+It's important to understand that this 'noise' exists at the *population* level, and that it's different from *sampling error*. If we could somehow observe the entire *population* of $(x, y)$ values (the *joint distribution* of $x$ and $y$, written as $f_{x,y}(x_{i},y_{i})$), we'd still see a 'cloud' of points instead a straight line. That's why $y$ has a distribution at every value of $x$, and if we could sample the full population, we'd observe that full distribution. Obviously that's not possible in practice, so we have to estimate the parameters of $y$'s distribution along $x$ based on a *sample*, and that's what leads to *sampling error*.
 
-Having this random term when we compute $x_{t}$ (or $y$ in OLS regression) means that our computed values will have intervals around them, and the width of those intervals will depend on the value of $\sigma$. Maybe a better way to look at this is that $x_{t}$ doesn't really have 'fixed' values, but it's rather a distribution that 'shows' its values when we observe it, and our job is to characterize that distribution using the data. So, long story short, $x_{t}$ is a *random* variable, a time series {$x_{t}$} is a sequence of random variables, and the observed data we have is a sequence of the realizations of each of those random variables (a random draw from each $x_{t}$'s distribution).
+Given that this is how nature behaves, we include a term in the equation that 'mimics' this noisy behavior, and that's $\epsilon$, or, in the time series model above, $w_{t}$. Obviously, since these terms are random, we need a distribution for them, and in many cases it's useful to assume a normal distribution with a mean of 0 and a variance of some value $\sigma$ (which we estimate from the data). Further, we also assume that, across all values of $x$ (or $t$ in the case of time series), that distribution is *the same* (e.g., always normal, instead of normal for certain values of $t$ and exponential for others) and that the properties (mean, variance, ...) of the distribution at one value of $x$, $x_{i}$ are disconnected from those at any other value of $x$, $x_{j}$ (formally, we say that $w_{t}$is *'iid'* - **independent and identically distributed**). If we didn't assume that we'd have to use the data to estimate the parameters of a different distribution for $w_{t}$ at every $t$, and that's just too many parameters for any data set.
+
+Having this random term when we compute $x_{t}$ (or $y$ in OLS regression) means that our computed values will have intervals around them, and the width of those intervals will depend on the value of $\sigma$ (which we never observe, since we only have a sample estimate). Another way to look at this is that $x_{t}$ doesn't really have 'fixed' values, but it's rather a distribution that 'shows' its values when we observe it, and our job is to characterize that distribution using the data. So, in summary, $x_{t}$ is a *random* variable, a time series {$x_{t}$} is a sequence of random variables such as $x_{t}$, and the time series data we have is a sequence of the realizations of each of those random variables (a random draw from each $x_{t}$'s distribution).
+
+#### **2.3.1. An illustration of sampling error using OLS regression as an example**
+
+If we could observe the full population of $(x_{i},y_{i})$ pairs, we could see exactly the distribution of $y$ given $x$ and compute its properties at every $x_{i}$ ($E(y|x)$, $Var(y|x)$, etc.). However, since we only have a sample, all we can do is compute *sample estimates* of the population parameters. Just for the sake of illustrating this point, Let's assume we could observe the full population of $(x,y)$ pairs, and that $x$ and $y$ are well correlated. A scatterplot of the points and the *population* OLS line would look like this:
+
+```{r, echo=FALSE}
+plot_se_ols <- function(n_sample){
+  
+  n_pop <- 1e4
+
+  beta0 <- 0
+  beta1 <- 1.3
+  sigma_epsilon <- 5
+  epsilon <- rnorm(n_pop, mean=0, sd=sigma_epsilon)
+  
+  x <- rnorm(n_pop, mean=10, sd=10)
+  y <- beta0 + beta1*x + rnorm(n_pop, mean=0, sd=sigma_epsilon)
+  
+  i_sample <- sample(x=1:length(x), size=n_sample)
+
+  x_sample <- x[i_sample]; y_sample <- y[i_sample]
+
+  plot(x, y, col='gray', pch=20, xaxt='n', yaxt='n', xlab='n', ylab='n')
+  abline(lm(y~x), col='gray50', lwd=2)
+  if(n_sample > 0){
+    points(x_sample, y_sample, col='black')
+    abline(lm(y_sample~x_sample), col='black', lwd=2)
+  }
+  mtext('x', 1, line=0.5); mtext('y', 2, line=0.5)
+}
+par(mar=c(3, 2, 3, 1))
+plot_se_ols(0)
+``` 
+
+Now, let's say we take a random sample of size 7 out of this population, compute the *sample* OLS line and plotted that on top of the population (sample in black, population in gray):
+```{r, echo=FALSE}
+par(mar=c(3, 2, 3, 1))
+plot_se_ols(7)
+``` 
+
+We see that the sample OLS line deviates from the population line, simply because it's based on a subset of the gray points, and, by chance, it's possible our sample doesn't represent *exactly* the population, although it does resemble it somewhat. Now, say we took 12 more samples of the same size ($n=5$):
+
+```{r, echo=FALSE}
+par(mfcol=c(3, 4), mar=c(1.5, 1.5, 1, 1))
+for(i in seq(1, 12, by = 1)) plot_se_ols(5)
+```
+
+See how every time we *repeat* the random sampling the OLS line changes a bit? That's called *variation upon replication*; it's a fundamental fact of working with random variables and the source of *sampling error*. Because we're computing statistics based on *samples*, and our results would *vary upon replication*, it's necessary to attach a measure of the size of that variability to every sample statistic we compute. Those are the standard errors we see in any inferential statistical analysis, and the basis of confidence and prediction intervals for sample statistics (like the sample mean, variance, covariance, $r^2$, etc.).
+
+One final point before moving back to time series models. Let's take again 12 random samples, but now $n$ will be larger, say 100:
+
+```{r, echo=FALSE}
+par(mfcol=c(3, 4), mar=c(1.5, 1.5, 1, 1))
+for(i in seq(1, 12, by = 1)) plot_se_ols(100)
+```
+
+We note immediately that the variation of the sample OLS lines around the population line is much smaller with this new, larger $n$. That happens simply because taking a larger sample gives us a better chance of representing the entire population. With a small sample, we may end up with mostly large values, or mostly small values, and so on. With a larger sample, we can represent the population better, and this leads to smaller *variation upon replication*. It's because of this that you find $n$ in the denominator of formulas for computing the standard error of sample statistics: a larger $n$ leads to a smaller standard error.
 
 #### **Some famous theoretical stochastic processes**
 
