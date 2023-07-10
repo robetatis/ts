@@ -207,13 +207,26 @@ stats::Box.test(x_t, lag=20)
 # say we have an AR(2) model x_t = delta + phi_1*x_tminus1 + phi_2*x_tminus2 + w_t,
 # and our series goes from 1....n. 
 # if we want a forecast at time n + 1, the model is:
-#   x_nplus1 = delta + phi_1*x_n + phi_2*x_nminus1 + w_t 
-#   this is ok because we have observed values for x_n and x_nminus1
+#   x_nplus1 = delta + phi_1*x_n + phi_2*x_nminus1 + w_nplus1 
+# if we want a forecast at time n + 2, the model is:
+#   x_nplus2 = delta + phi_1*x_nplus1 + phi_2*x_n + w_nplus2
 
+# in the 1st case, we can use our observations for x_n and x_nminus1
+# in the 2nd case, we're forced to use forecasted values for x_nplus1
+# for w_nplus1 and w_nplus2, the only thing we can do is use E(w_t|x_t), which is 0
 
+# psi-weight representation:
+# any ARIMA model can be written as 
+#   x_t - miu = w_t + psi_1*w_tminus1 + psi_2*w_tminus2 + ... infinity
+#   x_t - miu = sum{j=0, infinity}(psi_j*w_tminusj), with psi_0 = 1
+# (the infinite sum of the psi_j must be < infinity, i.e., converge)
 
-
-
+# example: x_t = 40 + 0.6*x_tminus1 + w_t
+# write model in psi-weight form:
+#   define z_t = x_t - miu
+#   for AR(1), miu = delta / (1 - phi_1) = 40/(1-0.6) = 100
+#      
+#
 
 
 

@@ -7,13 +7,15 @@
   1. https://online.stat.psu.edu/stat510/
   2. Shumway, R., Stoffer, D. (2011). Time series analysis and its applications, with R examples, 3rd edition. Springer New York Dordrecht Heidelberg London. e-ISBN 978-1-4419-7865-3
 
+## **0. Motivation**
+
 These notes aim to explain some basic principles of time series modelling in a practical way, but without avoiding critical theoretical details. It's a summary of (hopefully) **understandable explanations** of key ideas, and not just a plain presentation of concepts, which is often what I've found (and struggled with) in many textbooks.
 
 ## **1. What are time series, and why are they different from other data sets?**
 
 A time series is just a sequence of measurements of a variable (GDP, wind speed, population size, no. users, no. transactions, etc.) over time, where every data point has a time associated with it (typically called a 'time stamp'). Here's a manual example:
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 daily_transactions <- data.frame(
   date = seq(as.Date('2023-06-05'), as.Date('2023-06-12'), by='day'),
   n = c(7, 5, 7, 11, 13, 18, 5, 6)
@@ -70,9 +72,9 @@ The last term ($w_{t}$) is key because it indicates the *stochastic nature* of t
 In OLS regression, we model the response $y$ as $y=\beta_{0}+\beta_{1}~x+\epsilon$, and, for a single observation $y_{i}$, we say that $y_{i}=\beta_{0}+\beta_{1}~x_{i}+\epsilon_{i}$. What we're saying with this is that any realization (i.e., any particular value) $y_{i}$ of the random variable $y$ can be understood (i.e., computed, modeled) as a linear function of it's corresponding $x_{i}$ (the first two terms $\beta_{0}+\beta_{1}~x_{i}$) plus a *random error* 
 $\epsilon_{i}$. 
 
-Why this random error? Because nature is 'noisy', and even if $x$ and $y$ really are correlated, there will always be some spread around the line given by $\beta_{0}+\beta_{1}~x$. In other words, at any give value of $x$, $x_{i}$, we don't have a 'corresponding' value of $y$, $y_{i}$, but rather a *distribution* for $y$. The OLS line $\beta_{0}+\beta_{1}~x$ only represents the expected value of $y$ given $x$. Formally, this is written as $E(y|x)=\beta_{0}+\beta_{1}~x$, which is obtained by simply taking the expected value given $x$ ($E(...|x)$) on both sides of $y=\beta_{0}+\beta_{1}~x+\epsilon$, and noting that $E(\epsilon|x)=0$ (since OLS assumes random error to have a normal distribution with zero mean and variance $\sigma^2$).
+Why this random error? Because nature is 'noisy', and even if $x$ and $y$ really are correlated, there will always be some spread around the line given by $\beta_{0}+\beta_{1}~x$. In other words, at any given value of $x$, $x_{i}$, we don't have a 'corresponding' value of $y$, $y_{i}$, but rather a *distribution* for $y$. The OLS line $\beta_{0}+\beta_{1}~x$ only represents the expected value of $y$ given $x$. Formally, this is written as $E(y|x)=\beta_{0}+\beta_{1}~x$, which is obtained by simply taking the expected value given $x$ ($E(...|x)$) on both sides of $y=\beta_{0}+\beta_{1}~x+\epsilon$, and noting that $E(\epsilon|x)=0$ (since OLS assumes random error to have a normal distribution with zero mean and variance $\sigma^2$).
 
-It's important to understand that this 'noise' exists at the *population* level, and that it's different from *sampling error*. If we could somehow observe the entire *population* of $(x, y)$ values (the *joint distribution* of $x$ and $y$, written as $f_{x,y}(x_{i},y_{i})$), we'd still see a 'cloud' of points instead a straight line. That's why $y$ has a distribution at every value of $x$, and if we could sample the full population, we'd observe that full distribution. Obviously that's not possible in practice, so we have to estimate the parameters of $y$'s distribution along $x$ based on a *sample*, and that's what gives rise to *sampling error*.
+It's important to understand that this 'noise' exists at the *population* level, and that it's different from *sampling error*. If we could somehow observe the entire *population* of $(x, y)$ values (the *joint distribution* of $x$ and $y$, written as $f_{x,y}(x_{i},y_{i})$), we'd still see a 'cloud' of points instead of a straight line. That's why $y$ has a distribution at every value of $x$, and if we could sample the full population, we'd observe that full distribution. Obviously that's not possible in practice, so we have to estimate the parameters of $y$'s distribution along $x$ based on a *sample*, and that's what gives rise to *sampling error*.
 
 Given that this is how nature behaves, we include a term in the equation that 'mimics' this noisy behavior, and that's $\epsilon$, or, in the time series model above, $w_{t}$. Obviously, since these terms are random, we need a distribution for them, and in many cases it's useful to assume a normal distribution with a mean of 0 and a variance of some value $\sigma$ (which we estimate from the data). Further, we also assume that, across all values of $x$ (or $t$ in the case of time series), that distribution is *the same* (e.g., always normal, instead of normal for certain values of $t$ and exponential for others). Also, we assume that the properties (mean, variance, ...) of the distribution at one value of $t$ are disconnected from those at any other value of $t$. Formally, we say that $w_{t}$is *'iid'* - **independent and identically distributed**. If we didn't assume that we'd have to use the data to estimate the parameters of a different distribution for $w_{t}$ at every $t$, and that's just too many parameters for any data set.
 
@@ -80,7 +82,7 @@ Having this random term when we compute $x_{t}$ (or $y$ in OLS regression) means
 
 #### **2.2.2. An illustration of sampling error using OLS regression as an example**
 
-If we could observe the full population of $(x_{i},y_{i})$ pairs, we could see exactly the distribution of $y$ given $x$ and compute its properties at every $x_{i}$ ($E(y|x)$, $Var(y|x)$, etc.). However, since we only have a sample, all we can do is compute *sample estimates* of the population parameters. Just for the sake of illustrating this point, Let's assume we could observe the full population of $(x,y)$ pairs, and that $x$ and $y$ are well correlated. A scatterplot of the points and the *population* OLS line would look like this:
+If we could observe the full population of $(x_{i},y_{i})$ pairs, we could see exactly the distribution of $y$ given $x$ and compute its properties at every $x_{i}$ ($E(y|x)$, $Var(y|x)$, etc.). However, since we only have a sample, all we can do is compute *sample estimates* of the population parameters. Just for the sake of illustrating this point, let's assume we could observe the full population of $(x,y)$ pairs, and that $x$ and $y$ are well correlated. A scatterplot of the points and the *population* OLS line would look like this:
 
 ```{r, echo=FALSE}
 plot_se_ols <- function(n_sample){
@@ -111,7 +113,8 @@ par(mar=c(3, 2, 3, 1))
 plot_se_ols(0)
 ``` 
 
-Now, let's say we take a random sample of size 5 out of this population, compute the *sample* OLS line and plotted that on top of the population (sample in black, population in gray):
+Now, let's say we take a random sample of size 5 out of this population, compute the *sample* OLS line and plot that on top of the population (sample in black, population in gray):
+
 ```{r, echo=FALSE}
 par(mar=c(3, 2, 3, 1))
 plot_se_ols(5)
@@ -135,11 +138,11 @@ for(i in seq(1, 12, by = 1)) plot_se_ols(100)
 
 We note immediately that the variation of the sample OLS lines around the population line is much smaller with this new, larger $n$. That happens simply because taking a larger sample gives us a better chance of representing the entire population. With a small sample, we may end up with mostly large values, or mostly small values, and so on. With a larger sample, we can represent the population better, and this leads to smaller *variation upon replication*. It's because of this that you find $n$ in the denominator of formulas for computing the standard error of sample statistics: a larger $n$ leads to a smaller standard error.
 
-### **2.4. Some theoretical stochastic processes**
+### **2.3. Some theoretical stochastic processes**
 
 Let's use some examples of stochastic processes and their models to cover a few fundamental concepts in autoregressive time series modeling.
 
-#### **2.4.1. Random noise**
+#### **2.3.1. Random noise**
 
 This is the 'elementary' stochastic process. It's just a sequence of uncorrelated random variables $w_{t}$, where each one can have a different distribution (the least constrained case) or, as is often done, we can say they all have the same distribution (*iid*), typically a normal distribution with mean 0 and some variance $\sigma_{w}^2$. In that case we write $w_{t}\sim N(0, \sigma_{w}^2)$ to say that our random noise is normally distributed with mean 0 and variance $\sigma_{w}^2)$. 
 
@@ -149,7 +152,7 @@ $$x_{t}=w_{t}$$
 
 which simply says that, at every $t$, the value of the series $x_{t}$ is a draw from the distribution of $w_{t}$. This random noise series is, well, quite noisy, and is mostly just used as a model for unexplained variation (referred to as noise using an analogy from sound engineering).
 
-#### **2.4.1. Random walk, with and without drift**
+#### **2.3.2. Random walk, with and without drift**
 
 One way to introduce *smoothness* to this theoretical noisy series is to make the future a simple function of the past:
 
