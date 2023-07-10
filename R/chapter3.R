@@ -200,13 +200,15 @@ stats::Box.test(x_t, lag=20)
 # forecasting with ARIMA models
 # ********************************
 
-# when forecasting with ARIMA models, we need past values of x_t and/or past error 
-# values w_tminush
+# when forecasting with ARIMA models, we need past values x_tminusk and/or past 
+# errors w_tminusk. Further, if forecasting past the end of the series, we may 
+# even need values we haven't yet observed!
 
-# if forecasting past the end of the series, we may even need values we haven't
-# yet observed!
-
-
+# say we have an AR(2) model x_t = delta + phi_1*x_tminus1 + phi_2*x_tminus2 + w_t,
+# and our series goes from 1....n. 
+# if we want a forecast at time n + 1, the model is:
+#   x_nplus1 = delta + phi_1*x_n + phi_2*x_nminus1 + w_t 
+#   this is ok because we have observed values for x_n and x_nminus1
 
 
 
