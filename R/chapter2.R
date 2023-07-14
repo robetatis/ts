@@ -241,19 +241,23 @@ pacf(ma_process, main='PACF MA(1)', ylim=c(-1, 1), xlim=c(1, 20))
 #   - MA(2):
 #     x_t = miu + w_t + theta_1*w_tminus1 + theta_2*w_tminus2
 #     x_t = miu + (1 + theta_1*B + theta_2*B^2)*w_t
-#     THETA(B)*w_t = x_t - miu, 1=2
+#     THETA(B)*w_t = x_t - miu, q=2
 
 # ARMA model:
-#   - x_t = miu + phi_1*x_tminus1 + ... + phi_p*x_tminusp + 
+#   x_t = delta + phi_1*x_tminus1 + ... + phi_p*x_tminusp + 
 #               + theta_1*w_tminus1 + ... + theta_q*w_tminusq
 #               + w_t
-#     x_t - miu - phi_1*x_tminus1 - ... - phi_p*x_tminusp = 
+#   x_t - delta - phi_1*x_tminus1 - ... - phi_p*x_tminusp = 
 #               theta_1*w_tminus1 + ... + theta_q*w_tminusqs
 #               + w_t
-#     (1 - phi_1*B - ... - phi_p*B^p)*(x_t - miu) =
+#   noting that delta = miu*(1 - phi_1 - phi_2 - ... - phi_p), with miu = E(x_t),
+#   and that miu*(1 - phi_1 - phi_2 - ... - phi_p) = PHI(B)*(miu)
+#   and also that PHI(B)() is a linear operator, and thus 
+#     PHI(B)(x_t) - PHI(B)(miu) = PHI(B)(x_t - miu), we then get
+#   (1 - phi_1*B - ... - phi_p*B^p)*(x_t - miu) =
 #               (1 + theta_1*B + ... + theta_q*B^q)*w_t
-#
-#     PHI(B)*(x_t - miu) = THETA(B)*w_t
+#   finally,
+#   PHI(B)*(x_t - miu) = THETA(B)*w_t
 
 # differencing:
 #   - x_t - x_tminusk = (1 - B^k)*x_t = ▽_k*x_t

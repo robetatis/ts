@@ -221,13 +221,32 @@ stats::Box.test(x_t, lag=20)
 #   x_t - miu = sum{j=0, infinity}(psi_j*w_tminusj), with psi_0 = 1
 # (the infinite sum of the psi_j must be < infinity, i.e., converge)
 
-# example: x_t = 40 + 0.6*x_tminus1 + w_t
-# write model in psi-weight form:
-#   define z_t = x_t - miu
-#   for AR(1), miu = delta / (1 - phi_1) = 40/(1-0.6) = 100
-#      
+# stats::ARMAtoMA returns the psi weights for any ARMA model 
+stats::ARMAtoMA(ar=0.6, ma=0, lag.max=12)
+
+# the psi-weights are used for computing the standard error of the forecast error
+# at time n + m:
+#   Var(x_n(m) - x_nplusm) = sigma_w^2*sum{j=0, m - 1}(psi_j^2)
+# so, if we make a forecast at future time n + 1 (m = 1), the se of the forecast 
+# error is 
+#   se(x_n(1) - x_nplus1) = sqrt(sigma_w^2*(1))
+# for m = 2:
+#   se(x_n(2) - x_nplus2) = sqrt(sigma_w^2*(1 + psi_1^2))
 #
+# -> variance will grow as we move into the future!!!
 
+# example: 
+# x_t = 40 + 0.6*x_tminus1 + w_t. suppose n=100, sigma_w^2=4 and x_100=80
 
+n=100; sigma_w=sqrt(4); x_100=80
 
+# forecasts at 101 and 102:
+x_n_101 <- 40 + 0.6*x_100
+x_n_102 <- 40 + 0.6*x_n_101
+
+psi <- stats::ARMAtoMA(ar=0.6, ma=0, lag.max=2)
+
+# sd of forecast errors:
+se_101 <- sigma_w*sqrt(1) # m = 1
+se_102 <- sigma_w*sqrt(1 + psi[1]^2)
 
