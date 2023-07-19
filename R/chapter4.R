@@ -105,20 +105,104 @@ pacf(x_t, xlim=c(1, 40), ylim=c(-1, 1), main='PACF')
 # 1. plot raw data, search for trend and seasonality
 # 2. ACF and PACF for raw data:
 #    depending on whether there's AR and/or MA terms, ACF or PACF will show seasonality
-#    gradual oscillations with peaks at multiples of S
+#    seasonality -> gradual oscillations with peaks at multiples of S
 #    if AR, PACF will show significant peaks only at relevant lags, ACF will taper seasonally
 #    if MA, ACF will show significant peaks only at relevant lags, PACF will taper seasonally
 # 3. do necessary differencing, seasonal and non-seasonal. look again at ACF, PACF
-
-
+#    after seasonal differencing, analyze ACF and PACF the same way as for a 
+#      no-trend, non-seasonal process (ACF/PACF, which tapers? which spikes?)
 
 # example ACF and PACF before/after seasonal differencing:
-x_t <- as.numeric(astsa::sarima.sim(ar=0.6, sar=-0.5, S=12, n=1000))
+x_t <- as.numeric(astsa::sarima.sim(ar=0.6, sar=0.5, S=12, n=1000))
+x_t_diff <- diff(x_t, lag=12)
 
-par(mfcol=c(1, 3))
+par(mfrow=c(1, 3))
+plot(x_t_diff, type='o', pch=20, main='x_t_diff')
+acf(x_t_diff, xlim=c(1, 40), ylim=c(-1, 1), main='ACF diff')
+pacf(x_t_diff, xlim=c(1, 40), ylim=c(-1, 1), main='PACF diff')
+
+# example seasonal model, Colorado river monthly flow:
+
+# grab data
+x_t <- scan('data/coloradoflow.dat')
+month <- seq(
+  as.Date('1950-01-01', format='%Y-%m-%d'), 
+  as.Date('1999-12-31', format='%Y-%m-%d'), 
+  by='month') # make monthly time axis
+
+df <- data.frame(
+  t=month,
+  month=format(month, format='%m'), # make month variable for grouping
+  x_t=x_t) # put together into data frame
+
+# aggregate data by month
+df_monthly <- data.frame(
+  month=seq(1, 12, by=1),
+  mean=aggregate(df$x_t, by=list(df$month), FUN=mean)$x,
+  min=aggregate(df$x_t, by=list(df$month), FUN=min)$x,
+  max=aggregate(df$x_t, by=list(df$month), FUN=max)$x 
+) 
+
+# plot raw data and monthly data
+par(mfcol=c(1, 2))
 plot(x_t, type='o', pch=20)
-acf(x_t, xlim=c(1, 40), ylim=c(-1, 1), main='ACF')
-pacf(x_t, xlim=c(1, 40), ylim=c(-1, 1), main='PACF')
+plot(df_monthly$mean, type='o', pch=20, ylim=c(0, 10))
+lines(df_monthly$min, col='gray')
+lines(df_monthly$max, col='gray')
+
+# ... there seems to be seasonality, -> S=12 seems reasonable. to explore further 
+#     components, take lag-12 seasonal differences and look at ACF and PACF:
+x_t_diff <- diff(x_t, lag=12)
+
+# plot ACF and PACF for raw and 12-differenced data
+windows(12, 6)
+par(mfrow=c(2, 3))
+plot(x_t, type='o', pch=20, main='x_t')
+acf(x_t, xlim=c(1, 50), ylim=c(-1, 1), main='ACF'); abline(v=0, col='blue')
+pacf(x_t, xlim=c(1, 50), ylim=c(-1, 1), main='PACF'); abline(v=0, col='blue')
+plot(x_t_diff, type='o', pch=20, main='x_t_diff')
+acf(x_t_diff, xlim=c(1, 50), ylim=c(-1, 1), main='ACF diff'); abline(v=0, col='blue')
+pacf(x_t_diff, xlim=c(1, 50), ylim=c(-1, 1), main='PACF diff'); abline(v=0, col='blue')
+
+# non-seasonal components (look tapering/spikes ACF/PACF over multiples of h)
+#   - in diff ACF, we see tapering around lags 1, 12, 24
+#   - in diff PACF, we see spikes around lags 1, 12, 24
+#   -> suggests non-seasonal AR(1)
+# seasonal components (look tapering/spikes ACF/PACF over multiples of S):
+#   - in diff ACF, we see spike at lag 1*S=12 (neg) and cut-off after that
+#   - in diff PACF, we see tapering over 1*S, 2*S, 3*S
+#   -> suggests seasonal MA(1)
+
+# overall, seems like we could use ARIMA(1, 0, 0)x(0, 1, 1)12:
+model <- astsa::sarima(x_t, p=1, d=0, q=0, P=0, D=1, Q=1, S=12)
+print(model)
+
+# check out residuals vs. fit
+x_t_hat <- x_t - model$fit$residuals
+ei <- as.numeric(model$fit$residuals)
+plot(x_t_hat, ei)
+
+# -> there's larger Var(ei) for larger values -> non-constant variance -> need
+#    to fix it by transformation, or ARCH model
+
+# the qq plot for residuals also does not look normal -> large residuals on both
+# ends -> extreme values in actual distribution of ei are more likely -> larger 
+# variance -> 'fatter tails'
+n <- length(ei)
+qobs <- sort((ei - mean(ei))/sd(ei))
+pobs <- (1:n)/(n)
+qtheoretical <- qnorm(pobs)
+
+par(mfcol=c(1, 2))
+hist(ei)
+plot(qtheoretical, qobs)
+abline(a=0, b=1)
+
+# make forecast
+astsa::sarima.for(x_t, 24, 1,0,0,0,1,1,12)
+
+
+
 
 
 
